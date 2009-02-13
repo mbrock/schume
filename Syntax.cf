@@ -1,0 +1,10 @@
+
+token ID (letter (letter | digit | '-')*) ;
+
+separator nonempty ID "" ;
+separator CSExpr "" ;
+
+CSVar. CSExpr		::= ID ;
+CSApp. CSExpr		::= "(" CSExpr [CSExpr] ")" ;
+CSAbs. CSExpr		::= "(" "lambda" "(" [ID] ")" CSExpr ")" ;
+CSCallcc. CSExpr	::= "(" "callcc" CSExpr ")" ;

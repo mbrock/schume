@@ -1,7 +1,9 @@
 
 \section{Framework}
 
-> {-# LANGUAGE DeriveDataTypeable, FlexibleInstances #-}
+> {-# LANGUAGE DeriveDataTypeable,
+>              FlexibleInstances,
+>              GeneralizedNewtypeDeriving #-}
 > module Compiler where
 >
 > -- Use Neil Mitchell's delightful Uniplate library.
@@ -14,6 +16,8 @@
 >
 > import            Data.Map     (Map)
 > import qualified  Data.Map as  Map
+>
+> import Data.List (elemIndex)
 
  This is the type of  expressions in the input language, parameterized
  over the type of variables.
@@ -92,9 +96,11 @@
 %format e_0
 %format e_1
 
-> compile :: ES -> Either CompilationError CPS
+> compile :: ES -> Either CompilationError ([AO], Map BodyID [AO])
 > compile e_0 = runCompiler (do  e_1 <- giveVariablesUniqueIDs e_0
->                                convertToCPS e_1)
+>                                e_2 <- convertToCPS e_1
+>                                let (code, bodies) = generateCodeFor e_2
+>                                return (code, bodies))
 
 
 
@@ -212,24 +218,31 @@
 
  \section{Abstract Machine Code}
 
-> newtype LexicalEnvironment = LexicalEnvironment [[Variable]]
-
-> newtype LexicalSpecifier = LexicalSpecifier (Int, Int)
+> type LexicalEnvironment = [[Variable]]
+> type LexicalSpecifier = (Int, Int)
 
 > data AO  =  AOPushClosure   Int
 >          |  AOPushVariable  LexicalSpecifier
->          |  AOApply
+>          |  AOTailcall
+>             deriving Show
 
 > type Codegen a = StateT CodegenState Identity a 
 
-> newtype BodyID = BodyID Int
->     deriving (Show, Eq, Num)
+> type BodyID = Int
 
 > data CodegenState = 
 >     CodegenState {
 >       codegenNextBodyID  :: BodyID,
 >       codegenBodies      :: Map BodyID [AO]
 >     }
+
+> generateCodeFor :: CPS -> ([AO], Map BodyID [AO])
+> generateCodeFor t = (code, codegenBodies state)
+>     where (code, state) = runCodegen (generateCode [] t)
+
+> runCodegen :: Codegen a -> (a, CodegenState)
+> runCodegen m = runIdentity (runStateT m state)
+>     where state = CodegenState 0 Map.empty
 
 > allocateBodyID :: Codegen BodyID
 > allocateBodyID = do  i <- gets codegenNextBodyID
@@ -242,12 +255,26 @@
 >       CPSVariable v           -> 
 >            return [AOPushVariable (v `specifiedLexicallyIn` e)]
 >       CPSAbstraction vs t'    ->
->            do  bodyID <- generateCodeForBody e vs t'
+>            do  bodyID <- generateCodeForBody (vs:e) t'
 >                return [AOPushClosure bodyID]
 >       CPSAdministrative v t'  ->
 >            generateCode e (CPSAbstraction [v] t')
 >       CPSApplication t' ts    ->
->            undefined
+>            do  argumentCodes  <- mapM (generateCode e) ts
+>                calleeCode     <- generateCode e t'
+>                return $ concat argumentCodes ++ calleeCode ++ [AOTailcall]
 
-> specifiedLexicallyIn  = undefined
-> generateCodeForBody   = undefined
+> specifiedLexicallyIn :: Variable -> LexicalEnvironment -> LexicalSpecifier
+> specifiedLexicallyIn = f 0
+>     where f _ _ []      = error "internal error"
+>           f n v (x:xs)  = case elemIndex v x of
+>                             Nothing  -> f (n + 1) v xs
+>                             Just i   -> (n, i)
+
+> generateCodeForBody :: LexicalEnvironment -> CPS -> Codegen BodyID
+> generateCodeForBody e t =
+>     do  bodyID  <- allocateBodyID
+>         code    <- generateCode e t
+>         modify (\s -> s { codegenBodies = 
+>                               Map.insert bodyID code (codegenBodies s) })
+>         return bodyID

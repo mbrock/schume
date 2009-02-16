@@ -27,7 +27,7 @@ doCompile s =
       Bad e -> do hPutStrLn stderr "Error:"
                   hPutStrLn stderr e
                   exitFailure
-      Ok  tree -> hPutStrLn stderr (either show showCPS $ compile $ cToE tree)
+      Ok  tree -> hPutStrLn stderr (show $ compile $ cToE tree)
 
 main :: IO ()
 main = do args <- getArgs

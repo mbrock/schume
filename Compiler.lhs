@@ -210,3 +210,44 @@
 >       f _ = 
 >           Nothing
 
+ \section{Abstract Machine Code}
+
+> newtype LexicalEnvironment = LexicalEnvironment [[Variable]]
+
+> newtype LexicalSpecifier = LexicalSpecifier (Int, Int)
+
+> data AO  =  AOPushClosure   Int
+>          |  AOPushVariable  LexicalSpecifier
+>          |  AOApply
+
+> type Codegen a = StateT CodegenState Identity a 
+
+> newtype BodyID = BodyID Int
+>     deriving (Show, Eq, Num)
+
+> data CodegenState = 
+>     CodegenState {
+>       codegenNextBodyID  :: BodyID,
+>       codegenBodies      :: Map BodyID [AO]
+>     }
+
+> allocateBodyID :: Codegen BodyID
+> allocateBodyID = do  i <- gets codegenNextBodyID
+>                      modify (\s -> s { codegenNextBodyID = i + 1 })
+>                      return i
+
+> generateCode :: LexicalEnvironment -> CPS -> Codegen [AO]
+> generateCode e t = 
+>     case t of
+>       CPSVariable v           -> 
+>            return [AOPushVariable (v `specifiedLexicallyIn` e)]
+>       CPSAbstraction vs t'    ->
+>            do  bodyID <- generateCodeForBody e vs t'
+>                return [AOPushClosure bodyID]
+>       CPSAdministrative v t'  ->
+>            generateCode e (CPSAbstraction [v] t')
+>       CPSApplication t' ts    ->
+>            undefined
+
+> specifiedLexicallyIn  = undefined
+> generateCodeForBody   = undefined

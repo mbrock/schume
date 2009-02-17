@@ -1,5 +1,5 @@
 
-module Bytecode (LexicalSpecifier, BodyID, AO (..)) where
+module Schume.Bytecode (LexicalSpecifier, BodyID, AO (..)) where
 
 type LexicalSpecifier = (Int, Int)
 

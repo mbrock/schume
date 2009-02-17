@@ -1,8 +1,8 @@
 
-module Pretty where
+module Schume.Pretty where
 
-import Compiler
-import Bytecode
+import Schume.Compiler
+import Schume.Bytecode
 
 import Text.PrettyPrint
 

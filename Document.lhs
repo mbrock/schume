@@ -21,6 +21,6 @@
 
 \chapter{Compiler}
 
-%include Compiler.lhs
+%include Schume/Compiler.lhs
 
 \end{document}

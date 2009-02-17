@@ -1,12 +1,13 @@
 
 all: schumec TeX/Compiler.pdf TeX/Compiler.ps
 
-schumec: Main.hs Compiler.lhs Syntax/Abs.hs Pretty.hs
+schumec: Main.hs Schume/Compiler.lhs Syntax/Abs.hs Schume/Pretty.hs \
+         Schume/Bytecode.hs Schume/Codegen.hs
 	ghc --make Syntax/Abs.hs Syntax/Par.hs Syntax/Lex.hs
-	ghc --make -Wall Main.hs Compiler.lhs -o schumec
+	ghc --make -Wall Main.hs -o schumec
 
 clean:
-	rm -f *.o *.hi schumec
+	rm -f *.o *.hi Schume/*.o Schume/*.hi schumec
 	rm -rf Syntax
 	rm -rf TeX
 
@@ -15,7 +16,7 @@ Syntax/Abs.hs: Syntax.cf
 	alex -g Syntax/Lex.x
 	happy -gca Syntax/Par.y
 
-TeX/Compiler.pdf: Document.lhs Compiler.lhs
+TeX/Compiler.pdf: Document.lhs Schume/Compiler.lhs
 	mkdir -p TeX
 	lhs2TeX -o TeX/Compiler.tex Document.lhs
 	( cd TeX ; pdflatex Compiler.tex ; pdflatex Compiler.tex ; cd .. )

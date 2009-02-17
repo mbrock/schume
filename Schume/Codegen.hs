@@ -1,7 +1,7 @@
-module Codegen where
+module Schume.Codegen where
 
-import Compiler
-import Bytecode
+import Schume.Compiler
+import Schume.Bytecode
 
 import Control.Monad.State
 import Control.Monad.Identity

@@ -4,7 +4,7 @@
 > {-# LANGUAGE DeriveDataTypeable,
 >              FlexibleInstances,
 >              GeneralizedNewtypeDeriving #-}
-> module Compiler where
+> module Schume.Compiler where
 >
 > -- Use Neil Mitchell's delightful Uniplate library.
 > import Data.Generics

@@ -9,9 +9,9 @@ import Syntax.Abs
 import Syntax.Par
 import Syntax.ErrM
 
-import Compiler
-import Codegen
-import Pretty
+import Schume.Compiler
+import Schume.Codegen
+import Schume.Pretty
 
 cToE :: CSExpr -> E String
 cToE (CSVar i)      = EVariable (idName i)

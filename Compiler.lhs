@@ -39,12 +39,12 @@
 
 > data Variable = MkVariable {  variableID    :: Integer,
 >                               variableName  :: String }
->    deriving (Eq, Data, Typeable)
+>    deriving (Eq, Data, Typeable, Show)
 
  Then we  transform to continuation-passing style.  This  type is |EV|
  plus a constructor  for `administrative' $\lambda$-abstractions which
  are are used to name results  of subterms, and minus the special form
- for |callcc|.
+ for |callcc|.  
 
 > data CPS  =  -- An (unshadowed) variable.
 >              CPSVariable        Variable
@@ -54,7 +54,12 @@
 >           |  CPSAdministrative  Variable    CPS
 >              -- An application.
 >           |  CPSApplication     CPS         [CPS]  
->     deriving (Eq, Data, Typeable)
+>     deriving (Eq, Data, Typeable, Show)
+
+> -- A `trivial' term is one whose evaluation evaluates no subterms.
+> isCPSTrivial :: CPS -> Bool
+> isCPSTrivial (CPSApplication _ _)  = False
+> isCPSTrivial _                     = True
 
 > -- Pretty syntax for building |CPSApplication|s.
 > (@@) :: CPS -> [CPS] -> CPS
@@ -76,12 +81,15 @@
 > data CompilationError =
 >        XUnboundVariable  String
 >     |  XInternalError    String
+>     |  XInsaneCPS        CPS
 >        deriving Show
 
 > -- Needed to use ErrorT.
 > instance Error CompilationError where
 >     strMsg = XInternalError
 
+> throwWhen :: MonadError e m => Bool -> e -> m ()
+> throwWhen p e = when p (throwError e)
 
  Compiler computations are run thusly:
 
@@ -146,7 +154,14 @@
 >     do  -- Create top-level continuation.
 >         k    <- gensym "%root-k"
 >         cps  <- cpsify e (CPSVariable k)
+>         cpsSanityCheck cps
 >         return (CPSAbstraction [k] (reduceAdministrativeRedexes cps))
+
+> -- Checks that a CPS term has no applications with nontrivial arguments.
+> cpsSanityCheck :: CPS -> Compiler ()
+> cpsSanityCheck t = throwWhen (any f (universe t)) (XInsaneCPS t)
+>     where  f (CPSApplication t' ts)  = any (not . isCPSTrivial) (t' : ts)
+>            f _                       = False
 
 > -- Dispatches on expression type.
 > cpsify :: EV -> CPS -> Compiler CPS

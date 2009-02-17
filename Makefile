@@ -1,7 +1,7 @@
 
 all: schumec TeX/Compiler.pdf TeX/Compiler.ps
 
-schumec: Main.hs Compiler.lhs Syntax/Abs.hs
+schumec: Main.hs Compiler.lhs Syntax/Abs.hs Pretty.hs
 	ghc --make Syntax/Abs.hs Syntax/Par.hs Syntax/Lex.hs
 	ghc --make -Wall Main.hs Compiler.lhs -o schumec
 

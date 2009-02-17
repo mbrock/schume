@@ -10,6 +10,7 @@ import Syntax.Par
 import Syntax.ErrM
 
 import Compiler
+import Codegen
 import Pretty
 
 cToE :: CSExpr -> E String
@@ -27,7 +28,8 @@ doCompile s =
       Bad e -> do hPutStrLn stderr "Error:"
                   hPutStrLn stderr e
                   exitFailure
-      Ok  tree -> hPutStrLn stderr (either show showProgram $ compile $ cToE tree)
+      Ok  tree -> hPutStrLn stderr (either show showResult $ compile $ cToE tree)
+    where showResult = showProgram . generateCodeFor
 
 main :: IO ()
 main = do args <- getArgs

@@ -2,6 +2,7 @@
 module Pretty where
 
 import Compiler
+import Bytecode
 
 import Text.PrettyPrint
 

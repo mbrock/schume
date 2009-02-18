@@ -1,5 +1,5 @@
 
-all: schumec TeX/Compiler.pdf TeX/Compiler.ps
+all: schumec vm/ops.h TeX/Compiler.pdf TeX/Compiler.ps
 
 schumec: Main.hs Schume/Compiler.lhs Syntax/Abs.hs Schume/Pretty.hs \
          Schume/Bytecode.hs Schume/Codegen.hs
@@ -8,8 +8,12 @@ schumec: Main.hs Schume/Compiler.lhs Syntax/Abs.hs Schume/Pretty.hs \
 
 clean:
 	rm -f *.o *.hi Schume/*.o Schume/*.hi schumec
+	rm -f vm/ops.h
 	rm -rf Syntax
 	rm -rf TeX
+
+vm/ops.h: Schume/Bytecode.hs Schume/BytecodeHeaderGenerator.hs
+	runghc Schume/BytecodeHeaderGenerator.hs > vm/ops.h
 
 Syntax/Abs.hs: Syntax.cf
 	bnfc -d Syntax.cf

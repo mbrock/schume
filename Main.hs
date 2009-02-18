@@ -13,6 +13,8 @@ import Schume.Compiler
 import Schume.Codegen
 import Schume.Pretty
 
+import qualified Data.Binary as Binary
+
 cToE :: CSExpr -> E String
 cToE (CSVar i)      = EVariable (idName i)
 cToE (CSApp c cs)   = EApplication (cToE c) (map cToE cs)
@@ -28,8 +30,14 @@ doCompile s =
       Bad e -> do hPutStrLn stderr "Error:"
                   hPutStrLn stderr e
                   exitFailure
-      Ok  tree -> hPutStrLn stderr (either show showResult $ compile $ cToE tree)
-    where showResult = showProgram . generateCodeFor
+      Ok  tree -> case compile (cToE tree) of
+                    Left e -> hPutStrLn stderr (show e)
+                    Right cps -> do let cm = generateCodeFor cps
+                                    hPutStrLn stderr "CPS transformed:"
+                                    hPutStrLn stderr (showCPS cps)
+                                    hPutStrLn stderr "\nBytecode:"
+                                    hPutStrLn stderr (showProgram cm)
+                                    Binary.encodeFile "a.out" cm
 
 main :: IO ()
 main = do args <- getArgs

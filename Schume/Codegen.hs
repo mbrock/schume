@@ -16,12 +16,12 @@ type Codegen a = StateT CodegenState Identity a
 data CodegenState = 
     CodegenState {
       codegenNextBodyID  :: BodyID,
-      codegenBodies      :: Map BodyID [AO]
+      codegenBodies      :: Map BodyID AOs
     }
 
-generateCodeFor :: CPS -> ([AO], Map BodyID [AO])
-generateCodeFor t = (code, codegenBodies state)
-    where (code, state) = runCodegen (generateCode [] t)
+generateCodeFor :: CPS -> CompiledModule
+generateCodeFor t = CompiledModule entryPoint (codegenBodies state)
+    where (entryPoint, state) = runCodegen (generateCodeForBody [] t)
 
 runCodegen :: Codegen a -> (a, CodegenState)
 runCodegen m = runIdentity (runStateT m state)
@@ -54,12 +54,12 @@ specifiedLexicallyIn = f 0
     where f _ _ []      = error "internal error"
           f n v (x:xs)  = case elemIndex v x of
                             Nothing  -> f (n + 1) v xs
-                            Just i   -> (n, i)
+                            Just i   -> (n, fromIntegral i)
 
 generateCodeForBody :: LexicalEnvironment -> CPS -> Codegen BodyID
 generateCodeForBody e t =
     do  bodyID  <- allocateBodyID
         code    <- generateCode e t
         modify (\s -> s { codegenBodies = 
-                              Map.insert bodyID code (codegenBodies s) })
+                              Map.insert bodyID (AOs code) (codegenBodies s) })
         return bodyID

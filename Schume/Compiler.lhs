@@ -155,9 +155,9 @@
 
 > -- Checks that a CPS term has no applications with nontrivial arguments.
 > cpsSanityCheck :: CPS -> Compiler ()
-> cpsSanityCheck t = throwWhen (any f (universe t)) (XInsaneCPS t)
->     where  f (CPSApplication t' ts)  = any (not . isCPSTrivial) (t' : ts)
->            f _                       = False
+> cpsSanityCheck t = throwWhen (any p (universe t)) (XInsaneCPS t)
+>     where  p (CPSApplication t' ts)  = any (not . isCPSTrivial) (t' : ts)
+>            p _                       = False
 
 > -- Dispatches on expression type.
 > cpsify :: EV -> CPS -> Compiler CPS

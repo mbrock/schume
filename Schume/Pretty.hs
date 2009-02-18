@@ -4,27 +4,27 @@ module Schume.Pretty where
 import Schume.Compiler
 import Schume.Bytecode
 
+import Data.Binary
 import Text.PrettyPrint
 
 import Control.Arrow (first)
 
 import qualified Data.Map as Map
-import           Data.Map   (Map)
+import           Data.Map   ()
 
 showCPS :: CPS -> String
 showCPS = render . printCPS
 
-showProgram :: ([AO], Map BodyID [AO]) -> String
+showProgram :: CompiledModule -> String
 showProgram = render . printProgram
 
-printProgram :: ([AO], Map BodyID [AO]) -> Doc
-printProgram (code, bodies) = 
+printProgram :: CompiledModule -> Doc
+printProgram (CompiledModule _ bodies) = 
     vcat (map (\(x, y) -> hang (text (x ++ ":")) 2 (printCode y))
-          (("main", code) : map (first show) (Map.toList bodies)))
+          (map (first show) (Map.toList bodies)))
 
-
-printCode :: [AO] -> Doc
-printCode = fsep . map printAO 
+printCode :: AOs -> Doc
+printCode (AOs aos) = fsep (map printAO aos)
 
 printAO :: AO -> Doc
 printAO (AOPushClosure bodyID) = 
@@ -34,7 +34,7 @@ printAO (AOPushVariable x) =
 printAO (AOTailcall) =
     text "tailcall;"
 
-printBodyID :: Int -> Doc
+printBodyID :: Word16 -> Doc
 printBodyID x = text "<" <> text (show x) <> text ">"
 
 printCPS :: CPS -> Doc

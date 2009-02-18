@@ -27,4 +27,5 @@ TeX/Compiler.pdf: Document.lhs Schume/Compiler.lhs
 	( cd TeX ; pdflatex Compiler.tex ; pdflatex Compiler.tex ; cd .. )
 
 TeX/Compiler.ps: TeX/Compiler.pdf
-	( cd TeX ; latex Compiler.tex ; latex Compiler.tex ; dvips Compiler ; cd .. )
+	( cd TeX ; latex Compiler.tex ; latex Compiler.tex ; \
+          dvips Compiler ; cd .. )

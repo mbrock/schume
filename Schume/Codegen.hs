@@ -16,7 +16,7 @@ type Codegen a = StateT CodegenState Identity a
 data CodegenState = 
     CodegenState {
       codegenNextBodyID  :: BodyID,
-      codegenBodies      :: Map BodyID AOs
+      codegenBodies      :: Map BodyID [AO]
     }
 
 generateCodeFor :: CPS -> CompiledModule
@@ -61,5 +61,5 @@ generateCodeForBody e t =
     do  bodyID  <- allocateBodyID
         code    <- generateCode e t
         modify (\s -> s { codegenBodies = 
-                              Map.insert bodyID (AOs code) (codegenBodies s) })
+                              Map.insert bodyID code (codegenBodies s) })
         return bodyID

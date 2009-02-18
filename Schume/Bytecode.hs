@@ -1,8 +1,11 @@
+{-# LANGUAGE ExistentialQuantification #-}
 
 module Schume.Bytecode (LexicalSpecifier, 
                         BodyID, 
-                        AO (..), 
-                        AOs (..),
+                        AO (..),
+                        tagForPushClosure,
+                        tagForPushVariable,
+                        tagForTailcall,
                         CompiledModule (..)) where
 
 import Data.Binary
@@ -12,21 +15,20 @@ import           Data.Map   (Map)
 
 import Data.Maybe (fromMaybe)
 
+import Control.Arrow
+import Control.Applicative
 import Control.Monad
 
+type BodyID           = Word16
 type LexicalSpecifier = (Word16, Word16)
-
-type BodyID = Word16
 
 data AO  =  AOPushClosure   BodyID
          |  AOPushVariable  LexicalSpecifier
          |  AOTailcall
 
-newtype AOs = AOs [AO]
-
 data CompiledModule = 
     CompiledModule { compiledModuleEntryPoint :: BodyID,
-                     compiledModuleBodies     :: Map BodyID AOs }
+                     compiledModuleBodies     :: Map BodyID [AO] }
 
 tagFor :: AO -> Word8
 tagFor (AOPushClosure _)   = 0
@@ -42,31 +44,26 @@ tagForPushVariable = tagFor (AOPushVariable undefined)
 tagForTailcall :: Word8
 tagForTailcall  = tagFor AOTailcall
 
+data AnyBinary = forall a. Binary a => AnyBinary a
+
+argumentFor :: AO -> AnyBinary
+argumentFor (AOPushClosure x)   = AnyBinary x
+argumentFor (AOPushVariable x)  = AnyBinary x
+argumentFor AOTailcall          = AnyBinary ()
+
+instance Binary AnyBinary where
+    put (AnyBinary x) = put x
+    get               = undefined
+
 instance Binary AO where
-    put x = do put (tagFor x :: Word8) 
-               case x of
-                 AOPushClosure   i    -> put i
-                 AOPushVariable (i,j) -> put i >> put j
-                 AOTailcall           -> return ()
+    put = put . (tagFor &&& argumentFor)
     get = do tag <- getWord8
              fromMaybe undefined 
-               (lookup tag [(tagForPushClosure,  liftM AOPushClosure get),
-                            (tagForPushVariable, liftM AOPushVariable get),
+               (lookup tag [(tagForPushClosure,  AOPushClosure  <$> get),
+                            (tagForPushVariable, AOPushVariable <$> get),
                             (tagForTailcall,     return AOTailcall)])
 
-instance Binary AOs where
-    put (AOs x) = do put (fromIntegral $ length x :: Word16)
-                     mapM_ put x
-    get = do n <- get :: Get Word16
-             aos <- replicateM (fromIntegral n) get
-             return (AOs aos)
-
 instance Binary CompiledModule where
-    put x = do put $ compiledModuleEntryPoint x
-               let bodies = compiledModuleBodies x
-               put (fromIntegral $ Map.size bodies :: Word16)
-               Map.foldWithKey (\k v m -> put k >> put v >> m) (return ()) bodies
-    get = do entryPoint <- get :: Get BodyID
-             n <- get :: Get Word16
-             bodies <- replicateM (fromIntegral n) (liftM2 (,) get get)
-             return $ CompiledModule entryPoint (Map.fromList bodies)
+    put = put . (compiledModuleEntryPoint &&& compiledModuleBodies)
+    get = CompiledModule <$> get <*> get
+

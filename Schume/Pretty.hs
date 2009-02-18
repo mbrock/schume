@@ -23,8 +23,8 @@ printProgram (CompiledModule _ bodies) =
     vcat (map (\(x, y) -> hang (text (x ++ ":")) 2 (printCode y))
           (map (first show) (Map.toList bodies)))
 
-printCode :: AOs -> Doc
-printCode (AOs aos) = fsep (map printAO aos)
+printCode :: [AO] -> Doc
+printCode = fsep . map printAO
 
 printAO :: AO -> Doc
 printAO (AOPushClosure bodyID) = 

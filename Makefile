@@ -13,6 +13,7 @@ clean:
 	rm -rf TeX
 
 vm/ops.h: Schume/Bytecode.hs Schume/BytecodeHeaderGenerator.hs
+	mkdir -p vm
 	runghc Schume/BytecodeHeaderGenerator.hs > vm/ops.h
 
 Syntax/Abs.hs: Syntax.cf

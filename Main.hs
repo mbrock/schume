@@ -32,7 +32,7 @@ doCompile s =
                   exitFailure
       Ok  tree -> case compile (cToE tree) of
                     Left e -> hPutStrLn stderr (show e)
-                    Right cps -> do let cm = generateCodeFor cps
+                    Right cps -> do let cm = generateCodeForProgram cps
                                     hPutStrLn stderr "CPS transformed:"
                                     hPutStrLn stderr (showCPS cps)
                                     hPutStrLn stderr "\nBytecode:"

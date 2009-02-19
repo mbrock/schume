@@ -19,9 +19,10 @@ showProgram :: CompiledModule -> String
 showProgram = render . printProgram
 
 printProgram :: CompiledModule -> Doc
-printProgram (CompiledModule _ bodies) = 
-    vcat (map (\(x, y) -> hang (text (x ++ ":")) 2 (printCode y))
-          (map (first show) (Map.toList bodies)))
+printProgram (CompiledModule entry bodies) =
+    vcat ((text ("Entry point: " ++ show entry)) :
+          (map (\(x, y) -> hang (text (x ++ ":")) 2 (printCode y))
+           (map (first show) (Map.toList bodies))))
 
 printCode :: [AO] -> Doc
 printCode = fsep . map printAO

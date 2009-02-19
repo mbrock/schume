@@ -19,9 +19,13 @@ data CodegenState =
       codegenBodies      :: Map BodyID [AO]
     }
 
-generateCodeFor :: CPS -> CompiledModule
-generateCodeFor t = CompiledModule entryPoint (codegenBodies state)
-    where (entryPoint, state) = runCodegen (generateCodeForBody [] t)
+generateCodeForProgram :: CPS -> CompiledModule
+generateCodeForProgram t =
+    case t of
+      CPSAbstraction [k] e ->
+          let (entryPoint, state) = runCodegen (generateCodeForBody [[k]] e) in
+            CompiledModule entryPoint (codegenBodies state)
+      _ -> error "Program should be a single-argument abstraction!"
 
 runCodegen :: Codegen a -> (a, CodegenState)
 runCodegen m = runIdentity (runStateT m state)

@@ -1,10 +1,10 @@
 
 CFLAGS = -Wall -W -g -std=gnu99
 
-all: schumec vm/vm
+all: schumec
 
 schumec: Main.hs Schume/Compiler.hs Syntax/Abs.hs Schume/Pretty.hs \
-         Schume/Bytecode.hs Schume/Codegen.hs
+         Schume/Bytecode.hs Schume/Codegen.hs Schume/VM.hs
 	ghc --make Syntax/Abs.hs Syntax/Par.hs Syntax/Lex.hs
 	ghc --make -Wall Main.hs -o schumec
 

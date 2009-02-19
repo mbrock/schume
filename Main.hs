@@ -12,6 +12,8 @@ import Syntax.ErrM
 import Schume.Compiler
 import Schume.Codegen
 import Schume.Pretty
+import Schume.Bytecode
+import Schume.VM
 
 import qualified Data.Binary as Binary
 
@@ -38,6 +40,14 @@ doCompile s =
                                     hPutStrLn stderr "\nBytecode:"
                                     hPutStrLn stderr (showProgram cm)
                                     Binary.encodeFile "a.out" cm
+                                    doRun cm
+
+doRun :: CompiledModule -> IO ()
+doRun cm = do x <- evalModule cm
+              case x of
+                Left e -> do hPutStrLn stderr ("VM error: " ++ show e)
+                             exitFailure
+                Right v -> do hPutStrLn stderr ("VM result: " ++ show v)
 
 main :: IO ()
 main = do args <- getArgs

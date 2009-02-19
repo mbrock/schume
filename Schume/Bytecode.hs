@@ -25,6 +25,7 @@ type LexicalSpecifier = (Word16, Word16)
 data AO  =  AOPushClosure   BodyID
          |  AOPushVariable  LexicalSpecifier
          |  AOTailcall
+            deriving Show
 
 data CompiledModule = 
     CompiledModule { compiledModuleEntryPoint :: BodyID,

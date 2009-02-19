@@ -1,7 +1,9 @@
 
-all: schumec vm/ops.h TeX/Compiler.pdf TeX/Compiler.ps
+CFLAGS = -Wall -W -g -std=gnu99
 
-schumec: Main.hs Schume/Compiler.lhs Syntax/Abs.hs Schume/Pretty.hs \
+all: schumec vm/vm
+
+schumec: Main.hs Schume/Compiler.hs Syntax/Abs.hs Schume/Pretty.hs \
          Schume/Bytecode.hs Schume/Codegen.hs
 	ghc --make Syntax/Abs.hs Syntax/Par.hs Syntax/Lex.hs
 	ghc --make -Wall Main.hs -o schumec
@@ -21,11 +23,11 @@ Syntax/Abs.hs: Syntax.cf
 	alex -g Syntax/Lex.x
 	happy -gca Syntax/Par.y
 
-TeX/Compiler.pdf: Document.lhs Schume/Compiler.lhs
-	mkdir -p TeX
-	lhs2TeX -o TeX/Compiler.tex Document.lhs
-	( cd TeX ; pdflatex Compiler.tex ; pdflatex Compiler.tex ; cd .. )
+# TeX/Compiler.pdf: Document.lhs Schume/Compiler.lhs
+# 	mkdir -p TeX
+# 	lhs2TeX -o TeX/Compiler.tex Document.lhs
+# 	( cd TeX ; pdflatex Compiler.tex ; pdflatex Compiler.tex ; cd .. )
 
-TeX/Compiler.ps: TeX/Compiler.pdf
-	( cd TeX ; latex Compiler.tex ; latex Compiler.tex ; \
-          dvips Compiler ; cd .. )
+# TeX/Compiler.ps: TeX/Compiler.pdf
+# 	( cd TeX ; latex Compiler.tex ; latex Compiler.tex ; \
+#           dvips Compiler ; cd .. )

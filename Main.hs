@@ -8,6 +8,7 @@ import System.Environment
 import Syntax.Abs
 import Syntax.Par
 import Syntax.ErrM
+import Syntax.Print
 
 import Schume.Compiler
 import Schume.Codegen
@@ -22,6 +23,7 @@ cToE (CSVar i)      = EVariable (idName i)
 cToE (CSApp c cs)   = EApplication (cToE c) (map cToE cs)
 cToE (CSAbs is cs)  = EAbstraction (map idName is) (cToE cs)
 cToE (CSCallcc cs)  = ECallcc (cToE cs)
+cToE (CSPrim n)     = EPrimitive n
 
 idName :: ID -> String
 idName (ID s) = s
@@ -32,15 +34,17 @@ doCompile s =
       Bad e -> do hPutStrLn stderr "Error:"
                   hPutStrLn stderr e
                   exitFailure
-      Ok  tree -> case compile (cToE tree) of
-                    Left e -> hPutStrLn stderr (show e)
-                    Right cps -> do let cm = generateCodeForProgram cps
-                                    hPutStrLn stderr "CPS transformed:"
-                                    hPutStrLn stderr (showCPS cps)
-                                    hPutStrLn stderr "\nBytecode:"
-                                    hPutStrLn stderr (showProgram cm)
-                                    Binary.encodeFile "a.out" cm
-                                    doRun cm
+      Ok  tree -> 
+          do hPutStrLn stderr (printTree tree)
+             case compile (cToE tree) of
+               Left e -> hPutStrLn stderr (show e)
+               Right cps -> do let cm = generateCodeForProgram cps
+                               hPutStrLn stderr "\nCPS transformed:"
+                               hPutStrLn stderr (showCPS cps)
+                               hPutStrLn stderr "\nBytecode:"
+                               hPutStrLn stderr (showProgram cm)
+                               Binary.encodeFile "a.out" cm
+                               doRun cm
 
 doRun :: CompiledModule -> IO ()
 doRun cm = do x <- evalModule cm

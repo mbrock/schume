@@ -27,15 +27,43 @@ emptyState = VMState { vmOperationQueue = [],
                        vmEnvironment    = [],
                        vmStack          = [] }
 
+primitives :: [VM ()]
+primitives = [primitiveExit, primitivePrintStar, primitivePrintNewline]
+
+primitiveExit :: VM ()
+primitiveExit = lookupVariable (0, 1) >>= throwError . XExit
+
+primitivePrintStar :: VM ()
+primitivePrintStar = do liftIO (putStr "*")
+                        k <- lookupVariable (0, 0)
+                        push Nil
+                        setupCall k
+
+primitivePrintNewline :: VM ()
+primitivePrintNewline = do liftIO (putStr "\n")
+                           k <- lookupVariable (0, 0)
+                           push Nil
+                           setupCall k
+
 data Value = Closure { closureCode        :: [AO],
                        closureEnvironment :: Environment }
-           | BuiltinExit
+           | Nil
+           | Primitive PrimitiveID
              deriving Show
+
+exitContinuation :: Value
+exitContinuation = Closure [AOPushPrimitive 0, -- "nil"
+                            AOPushVariable (0, 0),
+                            AOPushPrimitive 0,
+                            AOTailcall]
+                           []
 
 data VMError = XCodeUnderrun
              | XStackUnderrun
              | XNoSuchBody BodyID
              | XInternalError String
+             | XNotFunction Value
+             | XExit Value
                deriving Show
 
 instance Error VMError where
@@ -51,15 +79,19 @@ evalModule :: CompiledModule -> IO (Either VMError Value)
 evalModule m = evalVM m runModule
 
 runModule :: VM Value
-runModule = do push BuiltinExit
+runModule = do push exitContinuation
                getEntryPoint >>= getBody >>= makeClosure >>= setupCall
                bigStep
 
 bigStep :: VM Value
-bigStep = do x <- step
+bigStep = do -- get >>= liftIO . print
+             x <- (step >> return Nothing) `catchError` handler
              case x of
-               Nothing -> get >>= liftIO . print >> bigStep
-               Just y  -> return y
+               Nothing -> bigStep
+               Just v  -> return v
+    where handler e = case e of
+                        XExit v -> return (Just v)
+                        _       -> throwError e
 
 push :: Value -> VM ()
 push v = modify (\s -> s { vmStack = v : vmStack s })
@@ -81,8 +113,12 @@ setupCall (Closure code environment) =
     do enqueueOperations code
        replaceEnvironment environment
        moveStackToEnvironment
-setupCall BuiltinExit =
-    error "should never setupCall to BuiltinExit"
+setupCall (Primitive n) =
+    do replaceEnvironment []
+       moveStackToEnvironment
+       primitives !! (fromIntegral n)
+setupCall Nil =
+    throwError (XNotFunction Nil)
 
 enqueueOperations :: [AO] -> VM ()
 enqueueOperations code = modify (\s -> s { vmOperationQueue = code })
@@ -113,19 +149,15 @@ pop = do stack <- gets vmStack
            (x:xs) -> do modify (\s -> s { vmStack = xs })
                         return x
 
-step :: VM (Maybe Value)
+step :: VM ()
 step =
     do op <- readOperation
        case op of
          AOPushClosure bodyID ->
              do getBody bodyID >>= makeClosure >>= push
-                return Nothing
          AOPushVariable v ->
              do lookupVariable v >>= push
-                return Nothing
+         AOPushPrimitive n ->
+             do push (Primitive n)
          AOTailcall ->
-             do callee <- pop
-                case callee of
-                  BuiltinExit -> liftM Just pop
-                  Closure _ _ -> do setupCall callee
-                                    return Nothing
+             do pop >>= setupCall

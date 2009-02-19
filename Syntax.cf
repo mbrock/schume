@@ -1,10 +1,13 @@
 
 token ID (letter (letter | digit | '-')*) ;
 
-separator nonempty ID "" ;
+comment ";" ;
+
+separator ID "" ;
 separator CSExpr "" ;
 
 CSVar. CSExpr		::= ID ;
 CSApp. CSExpr		::= "(" CSExpr [CSExpr] ")" ;
+CSPrim. CSExpr          ::= "(" "primitive" Integer ")" ;
 CSAbs. CSExpr		::= "(" "lambda" "(" [ID] ")" CSExpr ")" ;
 CSCallcc. CSExpr	::= "(" "callcc" CSExpr ")" ;

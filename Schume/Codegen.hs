@@ -43,6 +43,8 @@ generateCode e t =
     case t of
       CPSVariable v           -> 
            return [AOPushVariable (v `specifiedLexicallyIn` e)]
+      CPSPrimitive n          ->
+           return [AOPushPrimitive (fromIntegral n)]
       CPSAbstraction vs t'    ->
            do  bodyID <- generateCodeForBody (vs:e) t'
                return [AOPushClosure bodyID]

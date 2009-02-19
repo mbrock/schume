@@ -20,6 +20,7 @@ data E v  =  EVariable     v
           |  EAbstraction  [v]    (E v)
           |  EApplication  (E v)  [E v]  
           |  ECallcc       (E v)
+          |  EPrimitive    Integer
 
 type ES  = E String
 type EV  = E Variable
@@ -30,6 +31,7 @@ data Variable = MkVariable {  variableID    :: Integer,
 
 data CPS  =  CPSVariable        Variable
           |  CPSAbstraction     [Variable]  CPS
+          |  CPSPrimitive       Integer
           |  CPSAdministrative  Variable    CPS
           |  CPSApplication     CPS         [CPS]  
     deriving (Eq, Data, Typeable, Show)
@@ -98,6 +100,8 @@ giveVariablesUniqueIDs = f Map.empty
           ECallcc e ->
               do  e' <- f renamings e
                   return $ ECallcc e'
+          EPrimitive n -> 
+              return $ EPrimitive n
 
 -- Adds mappings to a map, overwriting.
 withBindings :: Ord k => Map k a -> [(k, a)] -> Map k a
@@ -123,6 +127,7 @@ cpsify :: EV -> CPS -> Compiler CPS
 cpsify e k =
     case e of
       EVariable     v       -> return (k @@ [CPSVariable v])
+      EPrimitive    n       -> return (k @@ [CPSPrimitive n])
       EAbstraction  vs  e'  -> cpsifyAbstraction vs e' k
       EApplication  e'  es  -> cpsifyApplication e' es k
       ECallcc       e'      -> cpsifyCallcc e' k
@@ -144,8 +149,11 @@ cpsifyApplication e es k =
 
 cpsifyCallcc :: EV -> CPS -> Compiler CPS
 cpsifyCallcc e k =
-    do  f   <- gensym "%f"
-        cpsify e  (CPSAdministrative f (CPSVariable f @@ [k, k]))
+    do  f       <- gensym "%f"
+        ignored <- gensym "%ignored"
+        value   <- gensym "%value"
+        let k' = CPSAbstraction [ignored, value] (k @@ [CPSVariable value])
+        cpsify e  (CPSAdministrative f (CPSVariable f @@ [k, k']))
 
 foldrM :: Monad m => (a -> b -> m b) -> b -> [a] -> m b
 foldrM _  z []        = return z

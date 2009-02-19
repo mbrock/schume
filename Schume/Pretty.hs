@@ -32,6 +32,8 @@ printAO (AOPushClosure bodyID) =
     text "push-closure" <+> printBodyID bodyID <> text ";"
 printAO (AOPushVariable x) =
     text "push-variable" <+> text (show x) <> text ";"
+printAO (AOPushPrimitive x) =
+    text "push-primitive" <+> text (show x) <> text ";"
 printAO (AOTailcall) =
     text "tailcall;"
 
@@ -41,6 +43,7 @@ printBodyID x = text "<" <> text (show x) <> text ">"
 printCPS :: CPS -> Doc
 printCPS e = case e of
                CPSVariable v -> printCPSVariable v
+               CPSPrimitive v -> printCPSPrimitive v
                CPSAdministrative v e' ->
                    hang (parens (text "%lambda" <+>
                                  parens (printCPSVariable v)))
@@ -55,3 +58,7 @@ printCPS e = case e of
 printCPSVariable :: Variable -> Doc
 printCPSVariable v =
     text (variableName v) <> text "-" <> text (show (variableID v))
+
+printCPSPrimitive :: Integer -> Doc
+printCPSPrimitive n =
+    parens (text "%primitive" <+> text (show n))

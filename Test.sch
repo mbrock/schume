@@ -1,3 +1,11 @@
-
-(callcc (lambda (k) ((lambda (x) (x x))
-		     (lambda (y) (y k)))))
+(callcc 
+ (lambda (exit)
+   ((lambda (nil print-star zero inc)
+      ((lambda (ignore) (exit ((primitive 2))))
+       ((inc (inc (inc (inc (inc zero))))) print-star nil)))
+    (lambda (x) x)
+    (lambda (f x) ((primitive 1)))
+    (lambda (f x) x)
+    (lambda (numeral)
+      (lambda (f x)
+	(numeral f (f x)))))))

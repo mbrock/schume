@@ -8,4 +8,4 @@
     (lambda (f x) x)
     (lambda (numeral)
       (lambda (f x)
-	(numeral f (f x)))))))
+        (numeral f (f x)))))))
